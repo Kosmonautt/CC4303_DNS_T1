@@ -1,5 +1,6 @@
 import binascii
 import socket
+import funciones_aux as aux
 
 # puerto donde funicionará el server
 port = 8000
@@ -15,6 +16,7 @@ resolver_socket.bind(resolver_adress)
 # se deja "corriendo" el server
 while True:
     # se guarda la data reibida
-    data, _ = resolver_socket.recvfrom(buff_size)
-    # se imprime la data reibida
-    print(data)
+    DNS_message, _ = resolver_socket.recvfrom(buff_size)
+    # se transoforma la data en una estrcutura
+    structure = aux.parse_DNS_message(DNS_message)
+    print(structure)

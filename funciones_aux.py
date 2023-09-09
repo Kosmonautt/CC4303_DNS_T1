@@ -50,11 +50,9 @@ def send_dns_message(qname ,address, port):
      return response
 
 # función recursiva que da el resultado de una query
-def resolver_recursive(qname, ip):
+def resolver_recursive(qname, ip, ipName):
 
-
-    print("(debug) Consultando {} a dirección IP {}".format(qname, ip))
-
+    print("(debug) Consultando '{}' a '{}' con dirección IP '{}'".format(qname,ipName,ip))
 
     # se hace la request a la dirección ip con el nombre del sitio buscado
     response = send_dns_message(qname, ip, 53)
@@ -92,11 +90,13 @@ def resolver_recursive(qname, ip):
             # se consigue el tipo de la RR
             add_rr_type = QTYPE.get(add_rr.rtype)
             # si el tipo de RR es A
-            if add_rr_type == 'A':                
+            if add_rr_type == 'A':  
+                # se consigue el nombre del dominio
+                add_rr_name = add_rr.get_rname()              
                 # se consigue la Rdata con la ip
                 add_rr_ip = str(add_rr.rdata)
                 # se retorna recursivamente
-                return resolver_recursive(qname, add_rr_ip)
+                return resolver_recursive(qname, add_rr_ip, add_rr_name)
 
         # si no se encuetra en Additional
         # se consigue Authority
@@ -109,8 +109,8 @@ def resolver_recursive(qname, ip):
             # se consigue el name server
             auth_rr_name = auth_rr.rname
             # se llama recursivamente para obtener la IP del name server
-            auth_response = resolver_recursive(auth_rr_name,ip_root)
-            # una vez obtenida la response se transforma en estrcutura
+            auth_response = resolver_recursive(auth_rr_name,ip_root, ".")
+            # una vez obtenida la response se transforma en estruuctura
             auth_struct = parse_DNS_message(auth_response)
             # se consigue Answer
             auth_Answer = auth_struct[2][0]
@@ -120,15 +120,8 @@ def resolver_recursive(qname, ip):
             auth_ip = str(auth_first_rr.rdata)
 
             # se llama recursivamente
-            return resolver_recursive(response_struct[0], auth_ip) 
+            return resolver_recursive(response_struct[0], auth_ip, auth_rr_name) 
         
-        
-
-
-    
-
-
-
 
 # función que recibe una query en bytes del cliente e intenta devolver el resultado adecuado
 def resolver(DNS_mssg):
@@ -138,7 +131,7 @@ def resolver(DNS_mssg):
     client_request_name = client_structure[0]
 
     # se le hace la consulta a la raíz
-    return resolver_recursive(client_request_name, ip_root)
+    return resolver_recursive(client_request_name, ip_root, ".")
 
 
 

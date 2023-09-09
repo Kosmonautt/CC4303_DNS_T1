@@ -1,6 +1,9 @@
 import binascii
 import socket
 import funciones_aux as aux
+import test
+from dnslib import DNSRecord
+
 
 # puerto donde funicionará el server
 port = 8000
@@ -17,6 +20,9 @@ resolver_socket.bind(resolver_adress)
 while True:
     # se guarda la data reibida
     DNS_message, _ = resolver_socket.recvfrom(buff_size)
-    # se transoforma la data en una estrcutura
-    structure = aux.parse_DNS_message(DNS_message)
-    print(structure)
+    # se llama a la función para obtener la response
+    response = aux.resolver(DNS_message)
+    
+    d = DNSRecord.parse(response)
+
+    test.print_dns_reply_elements(d)    

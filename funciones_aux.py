@@ -51,6 +51,11 @@ def send_dns_message(qname ,address, port):
 
 # función recursiva que da el resultado de una query
 def resolver_recursive(qname, ip):
+
+
+    print("(debug) Consultando {} a dirección IP {}".format(qname, ip))
+
+
     # se hace la request a la dirección ip con el nombre del sitio buscado
     response = send_dns_message(qname, ip, 53)
     # se transforma la response en una estrcutura
@@ -79,7 +84,7 @@ def resolver_recursive(qname, ip):
     if counts[2] >0:
         # se consigue Aditional
         Additional = sections[2]
-        
+
         # para cada RR en Additional
         for i in range(0,counts[3]):
             # se consigue la RR
@@ -90,7 +95,6 @@ def resolver_recursive(qname, ip):
             if add_rr_type == 'A':                
                 # se consigue la Rdata con la ip
                 add_rr_ip = str(add_rr.rdata)
-                print(add_rr_ip)
                 # se retorna recursivamente
                 return resolver_recursive(qname, add_rr_ip)
 
@@ -98,7 +102,7 @@ def resolver_recursive(qname, ip):
         # se consigue Authority
         Authority = sections[1]
 
-        # para cada RR en AUthority
+        # para cada RR en Authority
         for i in range(0, counts[2]):
             # se consigue la RR
             auth_rr = Authority[i]
@@ -113,7 +117,7 @@ def resolver_recursive(qname, ip):
             # se consigue la primera RR
             auth_first_rr = auth_Answer.get_a()
             # se consigue su ip asociada
-            auth_ip = auth_first_rr.rdata
+            auth_ip = str(auth_first_rr.rdata)
 
             # se llama recursivamente
             return resolver_recursive(response_struct[0], auth_ip) 

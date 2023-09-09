@@ -27,4 +27,4 @@ while True:
     # se envía la respuesta al cliente
     resolver_socket.sendto(response, client_address)
 
-    print(">>----------------------------------------------<<\n")
+    print("\n>>----------------------------------------------<<\n")

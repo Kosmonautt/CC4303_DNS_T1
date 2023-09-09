@@ -128,7 +128,7 @@ def resolver_recursive(query, ip, ipName):
             auth_name = auth_first_rr.rname
 
             # se llama recursivamente
-            return resolver_recursive(response, auth_ip, auth_name) 
+            return resolver_recursive(query, auth_ip, auth_name) 
         
 
 # función que recibe una query en bytes del cliente e intenta devolver el resultado adecuado

@@ -26,4 +26,6 @@ while True:
     # se envía la respuesta al cliente
     resolver_socket.sendto(response, client_address)
 
+    print(cache.fiveMostRepeated)
+
     print("\n>>----------------------------------------------<<\n")

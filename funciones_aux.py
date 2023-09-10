@@ -104,6 +104,9 @@ def resolver(query, ip, ipName, cache, debug=False):
     query_structure = parse_DNS_message(query)
     # se consigue el nombre del sitio deseado
     qname = query_structure[0]
+    # se pasa a str
+    qname = str(qname)
+    
 
     if debug:
         # se imprime el debug
@@ -129,8 +132,13 @@ def resolver(query, ip, ipName, cache, debug=False):
             answer = Answers[i]
             # se consigue el tipo de la RR
             answer_type = QTYPE.get(answer.rtype)
-            # si el tipo de RR es A, se retorna la response
+            # si el tipo de RR es A
             if answer_type == 'A':
+                # se añadé la dirección al caché 
+                cache.add_to_last20((qname,str(answer.rdata)))
+                # se actualiza el caché
+                cache.setfiveMostRepeated()
+                # se retorna la response
                 return response
             
     # si vienen authority records (NS)
@@ -176,7 +184,11 @@ def resolver(query, ip, ipName, cache, debug=False):
             # se consigue su ip asociada
             auth_ip = str(auth_first_rr.rdata)
             # se consigue su nombre
-            auth_name = auth_first_rr.rname
+            auth_name = str(auth_first_rr.rname)
+            # se añadé la dirección al caché 
+            cache.add_to_last20((auth_name,auth_ip))
+            # se actualiza el caché
+            cache.setfiveMostRepeated()  
 
             # se llama recursivamente
             return resolver(query, auth_ip, auth_name, cache, debug) 

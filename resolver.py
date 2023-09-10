@@ -22,10 +22,8 @@ while True:
     DNS_message, client_address = resolver_socket.recvfrom(buff_size)
 
     # se llama a la función para obtener la response
-    response = aux.resolver(DNS_message, ip_root, ".", cache, False)
+    response = aux.resolver(DNS_message, ip_root, ".", cache, True)
     # se envía la respuesta al cliente
     resolver_socket.sendto(response, client_address)
-
-    print(cache.fiveMostRepeated)
 
     print("\n>>----------------------------------------------<<\n")

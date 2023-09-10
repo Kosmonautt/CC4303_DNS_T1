@@ -1,5 +1,5 @@
 import socket
-from dnslib import DNSRecord
+from dnslib import DNSRecord, DNSHeader, DNSQuestion, RR, A
 from dnslib.dns import QTYPE
 
 # ip del servidor raíz
@@ -107,6 +107,15 @@ def resolver(query, ip, ipName, cache, debug=False):
     # se pasa a str
     qname = str(qname)
     
+    # si está en el caché
+    if qname in cache.fiveMostRepeated:
+        if debug:
+            print("(debug) Consultando '{}' a el Cache".format(qname))
+        # se consigue la ID de la pregunta
+        ID = (DNSRecord.parse(query)).header.id
+        #print(ID)
+
+        return response_cache(ID, qname, cache.fiveMostRepeated[qname])
 
     if debug:
         # se imprime el debug
@@ -196,23 +205,13 @@ def resolver(query, ip, ipName, cache, debug=False):
 # función que retorna una response a una query dando el ID de la query, el nombre del sitio buscado, y su ip
 
 def response_cache(qID, qname, qIP):
-    # mensaje "plantilla" de respuesta
-    template = b'I\xc7\x85\x00\x00\x01\x00\x01\x00\x00\x00\x00\x03www\x06uchile\x02cl\x00\x00\x01\x00\x01\xc0\x0c\x00\x01\x00\x01\x00\x00\x01,\x00\x04\xc8YL$'
- 
-    # se pasa a estrcutura
-    response = DNSRecord.parse(template)
-
+    # se crea una response con el nombre del dominio, la IP
+    d = DNSRecord(DNSHeader(qr=1,aa=1,ra=1),
+                            q=DNSQuestion(qname),
+                            a=RR("abc.com",rdata=A(qIP)))
     # se cambia la ID en el header
-    response.header.id = qIP
-
-    # se cambia el nombre de la primera (y única) query en QUERY SECTION
-    response.question[0].rname = qname
-
-    # se cambia el nombre y ID en la primera (y única) response en ANSWER SECTION
-    response.rr[0].rname = qname
-    response.rr[0].rdata = qID
-
-    # se pasa la response a bytes y se retorna
-    return bytes(response.pack())
+    d.header.id = qID
+    # se retorna en bytes
+    return bytes(d.pack())
 
 

@@ -20,7 +20,7 @@ while True:
     DNS_message, client_address = resolver_socket.recvfrom(buff_size)
 
     # se llama a la función para obtener la response
-    response = aux.resolver(DNS_message, ip_root, ".")
+    response = aux.resolver(DNS_message, ip_root, ".", 1)
 
     # se envía la respuesta al cliente
     resolver_socket.sendto(response, client_address)

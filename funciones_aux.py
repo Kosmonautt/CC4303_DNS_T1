@@ -5,6 +5,56 @@ from dnslib.dns import QTYPE
 # ip del servidor raíz
 ip_root = "192.33.4.12"
 
+# clase caché
+class Cache:
+    def __init__(self):
+        self.fiveMostRepeated = {}
+        self.last20 = []
+    
+    # función que añade un par (dominio, ip) a la lista
+    def add_to_last20(self, domain_ip_pair):
+        # si la lista tiene más de 20 elementos
+        if len(self.last20) >= 20:
+            # se remueve el primero (más antiguo)
+            self.last20.pop(0)
+            # se añade el nuevo
+            self.last20.append(domain_ip_pair)
+        # si no 
+        else:
+            # se añade el nuevo
+            self.last20.append(domain_ip_pair)
+    
+    # función que configura los últimos 5 domnios más visitados dados los último 20
+    def setfiveMostRepeated(self):
+        # se reinicia el dicc de 5 más repetidos
+        self.fiveMostRepeated = {}
+
+        # diccionario con llave el pair (dominio, ip) y valor la cantidad de veces que se repite en la lista
+        # self.last20
+        ocurrences = {}
+        # para cada par en la lista
+        for p in self.last20:
+            # si ya está en ocurrences 
+            if p in ocurrences:
+                # se aumenta en 1
+                ocurrences[p] += 1
+            # si no está
+            else:
+                # se añade con solo un elemento
+                ocurrences.update({p:1})
+
+        # se ordena por ocurrencias en orden decreciente
+        ocurrences = dict(sorted(ocurrences.items(), key = lambda x: x[1], reverse=True))
+
+        # se recorre el dicc ordenado para agregar a los 5 más repetidos
+        for key, value in ocurrences.items():
+            # se añade a los 5 más repetidos
+            self.fiveMostRepeated.update({key[0]:key[1]})
+            # si se llegó a 5
+            if len(self.fiveMostRepeated) >=5:
+                # se sale del for
+                break
+
 # función que transforma un mensaje DNS en una estrcutura manejable
 def parse_DNS_message(DNS_mssg):
     # se parsea con dnslib
@@ -49,7 +99,7 @@ def send_dns_message(query ,address, port):
     return response
 
 # función recursiva que da el resultado de una query
-def resolver(query, ip, ipName):
+def resolver(query, ip, ipName, cache):
     # se transofrma la query en una estrcutura manejable
     query_structure = parse_DNS_message(query)
     # se consigue el nombre del sitio deseado
@@ -100,7 +150,7 @@ def resolver(query, ip, ipName):
                 # se consigue la Rdata con la ip
                 add_rr_ip = str(add_rr.rdata)
                 # se retorna recursivamente
-                return resolver(query, add_rr_ip, add_rr_name)
+                return resolver(query, add_rr_ip, add_rr_name, cache)
 
         # si no se encuetra en Additional
         # se consigue Authority
@@ -117,7 +167,7 @@ def resolver(query, ip, ipName):
             # se pasa a bytes
             autrh_rr_query = bytes(autrh_rr_query.pack())
             # se llama recursivamente para obtener la IP del name server
-            auth_response = resolver(autrh_rr_query,ip_root, ".")
+            auth_response = resolver(autrh_rr_query,ip_root, ".", cache)
             # una vez obtenida la response se transforma en estructura de dnslib
             auth_Answer = DNSRecord.parse(auth_response)
             # se consigue la primera respuesta de answer
@@ -128,5 +178,5 @@ def resolver(query, ip, ipName):
             auth_name = auth_first_rr.rname
 
             # se llama recursivamente
-            return resolver(query, auth_ip, auth_name) 
+            return resolver(query, auth_ip, auth_name, cache) 
         

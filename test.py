@@ -79,7 +79,6 @@ def print_dns_reply_elements(dnslib_reply):
 
         answer_type = QTYPE.get(first_answer.rtype)
         print("-> answer_type = {}".format(answer_type))
-        print("-> answer_type TIPO = {}".format(type(answer_type)))
 
         answer_rdata = first_answer.rdata  # rdata asociada a la respuesta
         print("-> answer_rdata = {}".format(answer_rdata))

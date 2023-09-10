@@ -1,6 +1,8 @@
 import socket
 import funciones_aux as aux
 
+cache = aux.Cache()
+
 # ip del servidor raíz
 ip_root = "192.33.4.12"
 # puerto donde funicionará el server
@@ -20,8 +22,7 @@ while True:
     DNS_message, client_address = resolver_socket.recvfrom(buff_size)
 
     # se llama a la función para obtener la response
-    response = aux.resolver(DNS_message, ip_root, ".", 1, True)
-
+    response = aux.resolver(DNS_message, ip_root, ".", cache, False)
     # se envía la respuesta al cliente
     resolver_socket.sendto(response, client_address)
 

@@ -104,7 +104,7 @@ def resolver(query, ip, ipName, cache, debug=False):
     query_structure = parse_DNS_message(query)
     # se consigue el nombre del sitio deseado
     qname = query_structure[0]
-    
+
     if debug:
         # se imprime el debug
         print("(debug) Consultando '{}' a '{}' con dirección IP '{}'".format(qname,ipName,ip))
@@ -181,3 +181,26 @@ def resolver(query, ip, ipName, cache, debug=False):
             # se llama recursivamente
             return resolver(query, auth_ip, auth_name, cache, debug) 
         
+# función que retorna una response a una query dando el ID de la query, el nombre del sitio buscado, y su ip
+
+def response_cache(qID, qname, qIP):
+    # mensaje "plantilla" de respuesta
+    template = b'I\xc7\x85\x00\x00\x01\x00\x01\x00\x00\x00\x00\x03www\x06uchile\x02cl\x00\x00\x01\x00\x01\xc0\x0c\x00\x01\x00\x01\x00\x00\x01,\x00\x04\xc8YL$'
+ 
+    # se pasa a estrcutura
+    response = DNSRecord.parse(template)
+
+    # se cambia la ID en el header
+    response.header.id = qIP
+
+    # se cambia el nombre de la primera (y única) query en QUERY SECTION
+    response.question[0].rname = qname
+
+    # se cambia el nombre y ID en la primera (y única) response en ANSWER SECTION
+    response.rr[0].rname = qname
+    response.rr[0].rdata = qID
+
+    # se pasa la response a bytes y se retorna
+    return bytes(response.pack())
+
+

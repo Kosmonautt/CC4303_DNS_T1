@@ -1,6 +1,6 @@
 import binascii
 import socket
-import funciones_aux_2 as aux
+import funciones_aux_old as aux
 import test
 from dnslib import DNSRecord
 
@@ -20,11 +20,24 @@ resolver_socket.bind(resolver_adress)
 while True:
     # se guarda la data reibida y la dirección del cliente
     DNS_message, client_address = resolver_socket.recvfrom(buff_size)
+    # se transforma el mensaje en esctructura de dnslib
+    DNS_structure = DNSRecord.parse(DNS_message)
+    # se guarda la ID de la consulta
+    DNS_message_ID = DNS_structure.header.id
 
     # se llama a la función para obtener la response
     response = aux.resolver(DNS_message)
 
+    # se transforma en estructura para cambiar su ID
+    response_structure = DNSRecord.parse(response)
+    # se cambia su ID
+    response_structure.header.id = DNS_message_ID
+    # se aplican los cambios a response
+    response = bytes(response_structure.pack())
+
     # se envía la respuesta al cliente
     resolver_socket.sendto(response, client_address)
 
-    print("\n>>----------------------------------------------<<\n")
+    print(">>----------------------------------------------<<\n")
+
+    

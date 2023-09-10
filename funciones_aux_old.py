@@ -34,32 +34,27 @@ def parse_DNS_message(DNS_mssg):
     return [Qname, counts, sections]
 
 # función que le manda un mensaje DNS a cierta dirección y retorna la respuesta
-def send_dns_message(query ,address, port):
-    # se guarda la dirección donde se quiere enviar la query
-    server_address = (address, port)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # enviamos el mensaje a la dirección dada
-        sock.sendto(query, server_address)
-        # En data quedará la respuesta a nuestra consulta
-        response, _ = sock.recvfrom(4096)
-    finally:
-        sock.close()
-    # se retorna la response a la query
-    return response
+def send_dns_message(qname ,address, port):
+     # Acá ya no tenemos que crear el encabezado porque dnslib lo hace por nosotros, por default pregunta por el tipo A
+     q = DNSRecord.question(qname)
+     server_address = (address, port)
+     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+     try:
+         # lo enviamos, hacemos cast a bytes de lo que resulte de la función pack() sobre el mensaje
+         sock.sendto(bytes(q.pack()), server_address)
+         # En data quedará la respuesta a nuestra consulta
+         response, _ = sock.recvfrom(4096)
+     finally:
+         sock.close()
+     return response
 
 # función recursiva que da el resultado de una query
-def resolver_recursive(query, ip, ipName):
-    # se transofrma la query en una estrcutura manejable
-    query_structure = parse_DNS_message(query)
-    # se consigue el nombre del sitio deseado
-    qname = query_structure[0]
+def resolver_recursive(qname, ip, ipName):
 
-    # se imprime el debug
     print("(debug) Consultando '{}' a '{}' con dirección IP '{}'".format(qname,ipName,ip))
 
-    # se hace la request a la dirección ip con la query dada 
-    response = send_dns_message(query, ip, 53)
+    # se hace la request a la dirección ip con el nombre del sitio buscado
+    response = send_dns_message(qname, ip, 53)
     # se transforma la response en una estrcutura
     response_struct = parse_DNS_message(response)
     # se consigue la estructura con los "counts"
@@ -100,7 +95,7 @@ def resolver_recursive(query, ip, ipName):
                 # se consigue la Rdata con la ip
                 add_rr_ip = str(add_rr.rdata)
                 # se retorna recursivamente
-                return resolver_recursive(query, add_rr_ip, add_rr_name)
+                return resolver_recursive(qname, add_rr_ip, add_rr_name)
 
         # si no se encuetra en Additional
         # se consigue Authority
@@ -110,36 +105,32 @@ def resolver_recursive(query, ip, ipName):
         for i in range(0, counts[2]):
             # se consigue la RR
             auth_rr = Authority[i]
-            # se consigue el name server (desde su parte de rdata)
-            auth_rr_name = str(auth_rr.rdata)
-            # se crea un query con el nombre de la RR
-            autrh_rr_query = DNSRecord.question(auth_rr_name)
-            # se pasa a bytes
-            autrh_rr_query = bytes(autrh_rr_query.pack())
+            # se consigue el name server
+            auth_rr_name = auth_rr.rname
             # se llama recursivamente para obtener la IP del name server
-            auth_response = resolver_recursive(autrh_rr_query,ip_root, ".")
-            # una vez obtenida la response se transforma en estructura de dnslib
-            auth_Answer = DNSRecord.parse(auth_response)
-            # se consigue la primera respuesta de answer
+            auth_response = resolver_recursive(auth_rr_name,ip_root, ".")
+            # una vez obtenida la response se transforma en estruuctura
+            auth_struct = parse_DNS_message(auth_response)
+            # se consigue Answer
+            auth_Answer = auth_struct[2][0]
+            # se consigue la primera RR
             auth_first_rr = auth_Answer.get_a()
             # se consigue su ip asociada
             auth_ip = str(auth_first_rr.rdata)
-            # se consigue su nombre
-            auth_name = auth_first_rr.rname
 
             # se llama recursivamente
-            return resolver_recursive(query, auth_ip, auth_name) 
+            return resolver_recursive(response_struct[0], auth_ip, auth_rr_name) 
         
 
 # función que recibe una query en bytes del cliente e intenta devolver el resultado adecuado
 def resolver(DNS_mssg):
-    # # se transforma en una estructura manejable el sitio que quiere el usuario
-    # client_structure = parse_DNS_message(DNS_mssg)
-    # # se consigue el sitio que quiere el cliente
-    # client_request_name = client_structure[0]
+    # se transforma en una estructura manejable el sitio que quiere el usuario
+    client_structure = parse_DNS_message(DNS_mssg)
+    # se consigue el sitio que quiere el cliente
+    client_request_name = client_structure[0]
 
     # se le hace la consulta a la raíz
-    return resolver_recursive(DNS_mssg, ip_root, ".")
+    return resolver_recursive(client_request_name, ip_root, ".")
 
 
 

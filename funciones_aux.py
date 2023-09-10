@@ -208,7 +208,7 @@ def response_cache(qID, qname, qIP):
     # se crea una response con el nombre del dominio, la IP
     d = DNSRecord(DNSHeader(qr=1,aa=1,ra=1),
                             q=DNSQuestion(qname),
-                            a=RR("abc.com",rdata=A(qIP)))
+                            a=RR(qname,rdata=A(qIP)))
     # se cambia la ID en el header
     d.header.id = qID
     # se retorna en bytes

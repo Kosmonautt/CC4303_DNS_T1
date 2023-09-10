@@ -99,14 +99,15 @@ def send_dns_message(query ,address, port):
     return response
 
 # función recursiva que da el resultado de una query
-def resolver(query, ip, ipName, cache):
+def resolver(query, ip, ipName, cache, debug=False):
     # se transofrma la query en una estrcutura manejable
     query_structure = parse_DNS_message(query)
     # se consigue el nombre del sitio deseado
     qname = query_structure[0]
-
-    # se imprime el debug
-    print("(debug) Consultando '{}' a '{}' con dirección IP '{}'".format(qname,ipName,ip))
+    
+    if debug:
+        # se imprime el debug
+        print("(debug) Consultando '{}' a '{}' con dirección IP '{}'".format(qname,ipName,ip))
 
     # se hace la request a la dirección ip con la query dada 
     response = send_dns_message(query, ip, 53)
@@ -150,7 +151,7 @@ def resolver(query, ip, ipName, cache):
                 # se consigue la Rdata con la ip
                 add_rr_ip = str(add_rr.rdata)
                 # se retorna recursivamente
-                return resolver(query, add_rr_ip, add_rr_name, cache)
+                return resolver(query, add_rr_ip, add_rr_name, cache, debug)
 
         # si no se encuetra en Additional
         # se consigue Authority
@@ -167,7 +168,7 @@ def resolver(query, ip, ipName, cache):
             # se pasa a bytes
             autrh_rr_query = bytes(autrh_rr_query.pack())
             # se llama recursivamente para obtener la IP del name server
-            auth_response = resolver(autrh_rr_query,ip_root, ".", cache)
+            auth_response = resolver(autrh_rr_query,ip_root, ".", cache, debug)
             # una vez obtenida la response se transforma en estructura de dnslib
             auth_Answer = DNSRecord.parse(auth_response)
             # se consigue la primera respuesta de answer
@@ -178,5 +179,5 @@ def resolver(query, ip, ipName, cache):
             auth_name = auth_first_rr.rname
 
             # se llama recursivamente
-            return resolver(query, auth_ip, auth_name, cache) 
+            return resolver(query, auth_ip, auth_name, cache, debug) 
         
